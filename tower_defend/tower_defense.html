@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thủ Cửa - Hardcore Economy</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+      body{background:radial-gradient(1200px 800px at 50% 30%,#1b1035 0%,#0a0f1f 60%,#04070f 100%);color:#c8f6ff;font-family:monospace}
+      header{background:rgba(10,15,31,0.8);box-shadow:0 0 12px #00e5ff inset,0 0 18px #ff00ff;border:2px solid #4d2a84}
+      .stat-box{background:rgba(10,15,31,0.9);border:1px solid #00ffcc;box-shadow:0 0 10px #00ffcc;color:#e2faff}
+      .stat-icon{color:#ff66f9;text-shadow:0 0 6px #ff66f9}
+      #gameCanvas{image-rendering:pixelated;box-shadow:0 0 24px #00e5ff,0 0 48px #ff00ff inset;border:2px solid #00ffcc}
+      .scanlines{position:fixed;inset:0;pointer-events:none;background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,0.15) 0px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0) 3px,rgba(0,0,0,0) 4px);mix-blend-mode:overlay;z-index:9999}
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="stat-box"><span class="stat-icon">❤️</span> <span id="lives">20</span></div>
+        <div class="stat-box"><span class="stat-icon">💰</span> <span id="money">50</span></div>
+        <div class="stat-box"><span class="stat-icon">🌊</span> Đợt: <span id="wave">1</span></div>
+        <div class="stat-box" id="map-info" title="Thông tin bản đồ hiện tại">
+            <span class="stat-icon">🗺️</span> <span id="map-name">Thung Lũng Khó Khăn</span> 
+            <div class="difficulty-indicator" id="map-difficulty-container">
+                <div class="difficulty-stars" id="difficulty-stars"></div>
+                <span class="difficulty-text" id="map-difficulty">Độ khó: 3</span>
+                <div class="difficulty-bar">
+                    <div class="difficulty-fill" id="difficulty-fill"></div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-box towers-info-toggle" onclick="toggleTowersPanel()" title="Nhấn để xem chi tiết tháp">
+            <span class="stat-icon">🏰</span> Chi tiết tháp
+        </div>
+    </header>
+
+    <div id="towers-panel" class="towers-panel hidden">
+        <h3>Tháp trên sàn</h3>
+        <div id="towers-list" class="towers-list"></div>
+    </div>
+
+    <div id="damage-stats" class="damage-stats">
+        <h3>📊 THỐNG KÊ SÁT THƯƠNG</h3>
+        <p style="text-align: center; color: #bdc3c7; font-size: 0.9rem;">Chưa gây sát thương</p>
+    </div>
+
+    <div id="game-wrapper">
+        <div id="game-container">
+            <!-- Game Canvas: 1200x800 -->
+            <canvas id="gameCanvas" width="1200" height="800"></canvas>
+            <div id="prep-timer" style="
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: rgba(10,15,31,0.85);
+                color: #e2faff;
+                padding: 8px 12px;
+                border: 2px solid #00ffcc;
+                border-radius: 8px;
+                box-shadow: 0 0 12px #00e5ff;
+                font-size: 12px;
+                display: none;
+                z-index: 1000;
+            "></div>
+            <div class="scanlines"></div>
+            
+            
+
+            <!-- Wave Notification Popup -->
+            <div id="wave-notification" class="wave-notification hidden">
+                <div class="wave-notification-content">
+                    <h3 id="wave-notification-title">Đợt 2 đang tới</h3>
+                    <p id="wave-notification-text">Quái cần súng gì?</p>
+                </div>
+            </div>
+
+            
+            
+            <!-- Start Screen -->
+            <div id="start-screen" class="overlay">
+                <h1>THỦ CỬA: CHIẾN LƯỢC</h1>
+                <div class="instructions">
+                    <p>Chào mừng đến với Thủ Cửa: Chiến Lược! Nhiệm vụ của bạn là bảo vệ căn cứ khỏi các đợt quái vật tấn công bằng cách xây dựng và nâng cấp tháp phòng thủ.</p>
+                    <ul>
+                        <li><strong>💰 TIỀN KHÓ KIẾM:</strong> Bạn chỉ có 50$ để bắt đầu! Phải trồng cây để kiếm tiền.</li>
+                        <li>🌱 <strong>VƯỜN CÂY BÍ MẬT:</strong> Nhấn TAB hoặc click cổng để vào vườn trồng cây kiếm tiền.</li>
+                        <li>💧 <strong>TƯỚI NƯỚC:</strong> Cây sẽ chết nếu không được tưới nước đúng lúc!</li>
+                        <li>Sử dụng chuột để chọn và đặt tháp trên bản đồ.</li>
+                        <li>Sử dụng phím số (1-8) để nhanh chóng chọn tháp.</li>
+                        <li><strong>Chuột phải để hủy chọn súng đã chọn.</strong></li>
+                        <li>Theo dõi số mạng sống, tiền và đợt hiện tại ở góc trên bên trái màn hình.</li>
+                        <li>Nhấn nút "BẮT ĐẦU" để bắt đầu
+                </div>
+                <button class="btn-primary" onclick="startGame()">BẮT ĐẦU</button>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div id="game-over-screen" class="overlay hidden">
+                <h1 style="color: #e74c3c;">THẤT BẠI!</h1>
+                <p id="final-score" style="font-size: 1.2rem; margin-bottom: 20px;"></p>
+                <button class="btn-primary" onclick="resetGame()">CHƠI LẠI</button>
+            </div>
+            
+            <div id="tooltip"></div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <div class="tower-select" onclick="selectTower('basic')" id="btn-basic" onmouseover="showTooltip(event, 'Cung Thủ (50$): Rẻ, tốc độ trung bình')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">1</div>
+            <span class="tower-icon">🏹</span>
+            <span class="tower-cost">50$</span>
+        </div>
+        
+        <div class="tower-select" onclick="selectTower('ice')" id="btn-ice" onmouseover="showTooltip(event, 'Băng Giá (75$): Làm chậm, KHÔNG sát thương')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">2</div>
+            <span class="tower-icon">❄️</span>
+            <span class="tower-cost">75$</span>
+        </div>
+
+        <div class="tower-select" onclick="selectTower('poison')" id="btn-poison" onmouseover="showTooltip(event, 'Độc Dược (100$): Rút máu theo thời gian')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">3</div>
+            <span class="tower-icon">🧪</span>
+            <span class="tower-cost">100$</span>
+        </div>
+
+        <div class="tower-select" onclick="selectTower('sniper')" id="btn-sniper" onmouseover="showTooltip(event, 'Bắn Tỉa (150$): Bắn chậm, sát thương CỰC LỚN')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">4</div>
+            <span class="tower-icon">🔭</span>
+            <span class="tower-cost">150$</span>
+        </div>
+
+        <div class="tower-select" onclick="selectTower('tesla')" id="btn-tesla" onmouseover="showTooltip(event, 'Tesla (120$): Bắn xích điện, ăn cơm từng nhân')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">5</div>
+            <span class="tower-icon">⚡</span>
+            <span class="tower-cost">120$</span>
+        </div>
+
+        <div class="tower-select" onclick="selectTower('laser')" id="btn-laser" onmouseover="showTooltip(event, 'Laser (180$): Xuyên qua quái, bắn chậm')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">6</div>
+            <span class="tower-icon">🔴</span>
+            <span class="tower-cost">180$</span>
+        </div>
+
+        <div class="tower-select" onclick="selectTower('rocket')" id="btn-rocket" onmouseover="showTooltip(event, 'Rocket (200$): Nổ diện rộng, làm chậm')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">7</div>
+            <span class="tower-icon">🚀</span>
+            <span class="tower-cost">200$</span>
+        </div>
+
+        <div class="tower-select" onclick="selectTower('support')" id="btn-support" onmouseover="showTooltip(event, 'Support (160$): Tăng cộng hưởng tháp gần đó')" onmouseout="hideTooltip()">
+            <div class="shortcut-key">8</div>
+            <span class="tower-icon">✨</span>
+            <span class="tower-cost">160$</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/classes.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/ui-rendering.js"></script>
+    <script src="js/farm.js"></script>
+    <script src="js/farm-ui.js"></script>
+    <script src="js/game.js"></script>
+
+</body>
+</html>
