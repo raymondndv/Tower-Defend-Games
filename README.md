@@ -1,5 +1,6 @@
 [README.md](https://github.com/user-attachments/files/23711951/README.md)
 # Tower Defend – Công khai và hướng dẫn sử dụng
+Truy cập:https://traetowerdefend3t81.vercel.app để chơi online - have fun
 
 ## Chạy nhanh tại máy bạn
 - Yêu cầu: có Python hoặc XAMPP (Apache) trên máy.
