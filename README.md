@@ -1,6 +1,5 @@
 [README.md](https://github.com/user-attachments/files/23711951/README.md)
 # Tower Defend / Thủ Cửa – Bilingual Guide (English & Vietnamese)
-Click to play:https://traetowerdefend3t81.vercel.app
 ## Overview / Tổng quan
 - Tower defense with a hidden farm economy. Build towers to stop enemies; grow crops to earn gold to buy and upgrade towers.
 - Difficulty starts high and increases; some maps have multiple start/end paths with cave/castle markers.
